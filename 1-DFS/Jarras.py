@@ -30,3 +30,28 @@ def obtener_vecinos(estado):
     vecinos.append((x + transferencia, y - transferencia))
 
     return vecinos
+
+def dfs_jarras():
+    pila = [estado_inicial]
+    visitados = set()
+    camino = {estado_inicial: None}
+
+    while pila:
+        estado = pila.pop()
+
+        if estado not in visitados:
+            visitados.add(estado)
+
+            x, y = estado
+
+            if x == OBJETIVO or y == OBJETIVO:
+                return camino, estado
+
+            for vecino in obtener_vecinos(estado):
+                if vecino not in visitados:
+                    pila.append(vecino)
+
+                    if vecino not in camino:
+                        camino[vecino] = estado
+
+    return None, None
