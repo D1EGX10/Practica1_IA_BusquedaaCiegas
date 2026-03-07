@@ -1,8 +1,8 @@
-import tkinter as tk
-import tracemalloc
-import random
-import time
-from collections import deque
+import tkinter as tk #Sirve para la interfaz grafica 
+import tracemalloc #Mide la memoria utilizada
+import random #Genera numeros aleatorios
+import time #Mide el tiempo
+from collections import deque #Cola
 
 MAX_SIZE = 700
 
@@ -231,7 +231,7 @@ class LaberintoApp:
 
         # mostrar en interfaz
         self.info.config(
-            text=f"Tiempo de ejecución: {tiempo:.6f} s | Memoria pico: {memoria_mb:.3f}"
+            text=f"Tiempo de ejecución: {tiempo:.6f} s | Memoria pico: {memoria_mb:.3f}MB"
         )
 
 
