@@ -1,3 +1,7 @@
+import time
+import tracemalloc
+
+
 def dfs(grafo, inicio, objetivo):
     pila = [inicio]
     visitados = set()
@@ -34,25 +38,39 @@ def reconstruir_camino(camino, inicio, objetivo):
     return ruta
 
 
-if __name__ == "__main__":
+# Prueba
+grafo = {
+    "A": ["B", "C"],
+    "B": ["D", "E"],
+    "C": ["F"],
+    "D": [],
+    "E": ["F"],
+    "F": []
+}
 
-    # Grafo de prueba
-    grafo = {
-        "A": ["B", "C"],
-        "B": ["D", "E"],
-        "C": ["F"],
-        "D": [],
-        "E": ["F"],
-        "F": []
-    }
+inicio = "A"
+objetivo = "F"
 
-    inicio = "A"
-    objetivo = "F"
+# Medición de memoria
+tracemalloc.start()
 
-    resultado = dfs(grafo, inicio, objetivo)
+# Medición de tiempo
+inicio_tiempo = time.perf_counter()
 
-    if resultado:
-        ruta = reconstruir_camino(resultado, inicio, objetivo)
-        print("Camino encontrado:", ruta)
-    else:
-        print("No se encontró camino")
+resultado = dfs(grafo, inicio, objetivo)
+
+fin_tiempo = time.perf_counter()
+
+memoria_actual, memoria_maxima = tracemalloc.get_traced_memory()
+tracemalloc.stop()
+
+# Resultado
+if resultado:
+    ruta = reconstruir_camino(resultado, inicio, objetivo)
+    print("Camino encontrado:", ruta)
+else:
+    print("No se encontró camino")
+
+print("\n--- Métricas de ejecución ---")
+print("Tiempo de ejecución:", fin_tiempo - inicio_tiempo, "segundos")
+print("Memoria máxima usada:", memoria_maxima / 1024, "KB")
