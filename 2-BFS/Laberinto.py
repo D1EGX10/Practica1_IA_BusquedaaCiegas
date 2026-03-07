@@ -1,9 +1,11 @@
 import tkinter as tk
+import tracemalloc
 import random
 import time
 from collections import deque
 
-MAX_SIZE = 700  # tamaño máximo del canvas
+MAX_SIZE = 700
+
 
 # -----------------------------
 # Generar laberinto con solución
@@ -104,7 +106,7 @@ class LaberintoApp:
     def __init__(self,root):
 
         self.root = root
-        self.root.title("BFS Laberinto")
+        self.root.title("Laberinto BFS")
 
         self.size = 20
         self.cell = MAX_SIZE // self.size
@@ -133,6 +135,18 @@ class LaberintoApp:
         tk.Button(panel,text="Resolver BFS",
                   command=self.resolver).pack(side=tk.LEFT,padx=5)
 
+
+        # Barra de información
+        self.info = tk.Label(root,
+                             text="Tiempo: - | Memoria: - | Nodos explorados: -",
+                             font=("Arial",12),
+                             bg="#eeeeee",
+                             width=60,
+                             height=2)
+
+        self.info.pack(pady=5)
+
+
         self.laberinto = generar_laberinto(self.size)
 
         self.dibujar()
@@ -150,12 +164,16 @@ class LaberintoApp:
 
         self.dibujar()
 
+        self.info.config(text="Tiempo: - | Memoria: - | Nodos explorados: -")
+
 
     def generar(self):
 
         self.laberinto = generar_laberinto(self.size)
 
         self.dibujar()
+
+        self.info.config(text="Tiempo: - | Memoria: - | Nodos explorados: -")
 
 
     def dibujar(self):
@@ -188,9 +206,34 @@ class LaberintoApp:
                                      fill="red")
 
 
+# -----------------------------
+# Resolver con medición
+# -----------------------------
+
     def resolver(self):
 
+        tracemalloc.start()
+
+        inicio = time.perf_counter()
+
         visitados,camino = bfs(self.laberinto)
+
+        fin = time.perf_counter()
+
+        memoria_actual, memoria_pico = tracemalloc.get_traced_memory()
+
+        tracemalloc.stop()
+
+        tiempo = fin - inicio
+        memoria_mb = memoria_pico / 10**6
+        nodos = len(visitados)
+
+
+        # mostrar en interfaz
+        self.info.config(
+            text=f"Tiempo de ejecución: {tiempo:.6f} s | Memoria pico: {memoria_mb:.3f}"
+        )
+
 
         for x,y in visitados:
 
@@ -204,6 +247,7 @@ class LaberintoApp:
 
             self.root.update()
             time.sleep(0.001)
+
 
         for x,y in camino:
 
