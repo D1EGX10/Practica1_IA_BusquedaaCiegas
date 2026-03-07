@@ -55,3 +55,29 @@ def dfs_jarras():
                         camino[vecino] = estado
 
     return None, None
+
+def reconstruir_camino(camino, estado_final):
+    ruta = []
+    estado = estado_final
+
+    while estado is not None:
+        ruta.append(estado)
+        estado = camino[estado]
+
+    ruta.reverse()
+    return ruta
+
+if __name__ == "__main__":
+
+    camino, estado_final = dfs_jarras()
+
+    if estado_final:
+        ruta = reconstruir_camino(camino, estado_final)
+
+        print("Solución encontrada:\n")
+
+        for paso in ruta:
+            print(paso)
+
+    else:
+        print("No se encontró solución")
