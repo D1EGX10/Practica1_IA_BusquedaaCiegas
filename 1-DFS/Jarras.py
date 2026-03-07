@@ -1,10 +1,10 @@
-# capacidades de las jarras
+import time
+import tracemalloc
+#Jarras-Capacidad
 CAP1 = 4
 CAP2 = 3
-
 estado_inicial = (0, 0)
 OBJETIVO = 2
-
 def obtener_vecinos(estado):
     x, y = estado
     vecinos = []
@@ -31,6 +31,7 @@ def obtener_vecinos(estado):
 
     return vecinos
 
+
 def dfs_jarras():
     pila = [estado_inicial]
     visitados = set()
@@ -45,7 +46,7 @@ def dfs_jarras():
             x, y = estado
 
             if x == OBJETIVO or y == OBJETIVO:
-                return camino, estado
+                return camino, estado, len(visitados), len(pila)
 
             for vecino in obtener_vecinos(estado):
                 if vecino not in visitados:
@@ -54,7 +55,8 @@ def dfs_jarras():
                     if vecino not in camino:
                         camino[vecino] = estado
 
-    return None, None
+    return None, None, len(visitados), len(pila)
+
 
 def reconstruir_camino(camino, estado_final):
     ruta = []
@@ -67,9 +69,21 @@ def reconstruir_camino(camino, estado_final):
     ruta.reverse()
     return ruta
 
+
 if __name__ == "__main__":
 
-    camino, estado_final = dfs_jarras()
+    #memoria
+    tracemalloc.start()
+
+    #tiempo
+    inicio = time.perf_counter()
+
+    camino, estado_final, estados_visitados, tamaño_pila = dfs_jarras()
+    fin = time.perf_counter()
+
+    # medir memoria
+    memoria_actual, memoria_max = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
 
     if estado_final:
         ruta = reconstruir_camino(camino, estado_final)
@@ -81,3 +95,9 @@ if __name__ == "__main__":
 
     else:
         print("No se encontró solución")
+
+    print("\n--- Métricas de rendimiento ---")
+    print("Tiempo de ejecución:", fin - inicio, "segundos")
+    print("Estados explorados:", estados_visitados)
+    print("Tamaño final de la pila:", tamaño_pila)
+    print("Memoria máxima usada:", memoria_max / 1024, "KB")
