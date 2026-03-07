@@ -1,6 +1,7 @@
 import tkinter as tk
 import random
 import time
+import tracemalloc
 from collections import deque
 
 # estado objetivo
@@ -79,7 +80,7 @@ def bfs(inicio):
 
     camino.reverse()
 
-    return camino
+    return camino, visitados
 
 
 # -----------------------------
@@ -122,6 +123,16 @@ class PuzzleApp:
         tk.Button(panel,
                   text="Resolver BFS",
                   command=self.resolver).pack(side=tk.LEFT,padx=10)
+
+        # Barra de información
+        self.info = tk.Label(root,
+                             text="Tiempo: - | Memoria: - ",
+                             font=("Arial",12),
+                             bg="#eeeeee",
+                             width=45,
+                             height=2)
+
+        self.info.pack(pady=5)
 
         self.actualizar()
 
@@ -167,8 +178,32 @@ class PuzzleApp:
 
     def resolver(self):
 
-        camino = bfs(self.estado)
+        # iniciar medición de memoria
+        tracemalloc.start()
 
+        # tiempo inicial
+        inicio = time.perf_counter()
+
+        camino, visitados = bfs(self.estado)
+
+        # tiempo final
+        fin = time.perf_counter()
+
+        # obtener memoria usada
+        memoria_actual, memoria_pico = tracemalloc.get_traced_memory()
+
+        tracemalloc.stop()
+
+        tiempo = fin - inicio
+        memoria_mb = memoria_pico / 10**6
+        estados = len(visitados)
+
+        # mostrar en la interfaz
+        self.info.config(
+            text=f"Tiempo: {tiempo:.6f} s | Memoria pico: {memoria_mb:.3f} MB "
+        )
+
+        # animación de la solución
         for estado in camino:
 
             self.estado = estado

@@ -138,7 +138,7 @@ class LaberintoApp:
 
         # Barra de información
         self.info = tk.Label(root,
-                             text="Tiempo: - | Memoria: - | Nodos explorados: -",
+                             text="Tiempo: - | Memoria: -",
                              font=("Arial",12),
                              bg="#eeeeee",
                              width=60,
@@ -164,7 +164,7 @@ class LaberintoApp:
 
         self.dibujar()
 
-        self.info.config(text="Tiempo: - | Memoria: - | Nodos explorados: -")
+        self.info.config(text="Tiempo: - | Memoria: - ")
 
 
     def generar(self):
@@ -173,7 +173,7 @@ class LaberintoApp:
 
         self.dibujar()
 
-        self.info.config(text="Tiempo: - | Memoria: - | Nodos explorados: -")
+        self.info.config(text="Tiempo: - | Memoria: - ")
 
 
     def dibujar(self):
