@@ -62,3 +62,46 @@ def bfs_jarras():
                         camino[vecino] = estado
 
     return None, None, len(visitados), len(cola)
+
+def reconstruir_camino(camino, estado_final):
+
+    ruta = []
+    estado = estado_final
+
+    while estado is not None:
+        ruta.append(estado)
+        estado = camino[estado]
+
+    ruta.reverse()
+    return ruta
+
+if __name__ == "__main__":
+
+    tracemalloc.start()
+
+    inicio = time.perf_counter()
+
+    camino, estado_final, estados_visitados, tamaño_cola = bfs_jarras()
+
+    fin = time.perf_counter()
+
+    memoria_actual, memoria_max = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    if estado_final:
+
+        ruta = reconstruir_camino(camino, estado_final)
+
+        print("Solución encontrada:\n")
+
+        for paso in ruta:
+            print(paso)
+
+    else:
+        print("No se encontró solución")
+
+    print("\n--- Métricas de rendimiento ---")
+    print("Tiempo de ejecución:", fin - inicio, "segundos")
+    print("Estados explorados:", estados_visitados)
+    print("Tamaño final de la cola:", tamaño_cola)
+    print("Memoria máxima usada:", memoria_max / 1024, "KB")
