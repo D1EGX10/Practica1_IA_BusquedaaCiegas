@@ -46,3 +46,4 @@ def resolver_jarras_dfs():
         "memoria": m_max / 1024,
         "visitados": len(visitados)
     }
+print("")
