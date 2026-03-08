@@ -68,6 +68,7 @@ class AppDFS(tk.Tk):
             self.frame_jarras.destroy()
             self.frame_jarras = None
 
+
     def iniciar(self):
 
         self.label_metricas.config(text="")
@@ -86,13 +87,14 @@ class AppDFS(tk.Tk):
             self.limpiar()
             self.iniciar_jarras()
 
-    # ---------------------------------------------------
+    # -------------------------------------------------
     # LABERINTO
-    # ---------------------------------------------------
+    # -------------------------------------------------
 
     def iniciar_laberinto(self):
 
         size = int(self.size.get())
+
         cell = MAX_SIZE // size
 
         self.canvas = tk.Canvas(
@@ -186,9 +188,9 @@ class AppDFS(tk.Tk):
 
         self.after(40,self.animar_laberinto)
 
-    # ---------------------------------------------------
+    # -------------------------------------------------
     # PUZZLE
-    # ---------------------------------------------------
+    # -------------------------------------------------
 
     def iniciar_puzzle(self):
 
@@ -236,25 +238,26 @@ class AppDFS(tk.Tk):
         for i in range(9):
 
             val = estado[i]
+
             self.botones[i]["text"] = "" if val==0 else str(val)
 
         self.index += 1
 
         self.after(400,self.animar_puzzle)
 
-    # ---------------------------------------------------
+    # -------------------------------------------------
     # JARRAS
-    # ---------------------------------------------------
+    # -------------------------------------------------
 
     def iniciar_jarras(self):
 
         self.frame_jarras = tk.Frame(self)
-        self.frame_jarras.pack(pady=40)
+        self.frame_jarras.pack(pady=30)
 
         self.label_estado = tk.Label(
             self.frame_jarras,
             text="",
-            font=("Arial",22)
+            font=("Arial",20)
         )
         self.label_estado.pack()
 

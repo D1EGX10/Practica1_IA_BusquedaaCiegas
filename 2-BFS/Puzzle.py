@@ -2,31 +2,33 @@ from collections import deque
 import tracemalloc
 import time
 
+# -----------------------------
 # Estado objetivo
+# -----------------------------
 OBJETIVO = (1, 2, 3,
             4, 5, 6,
             7, 8, 0)
 
-
 # -----------------------------
-# Generar vecinos
+# Movimientos posibles
 # -----------------------------
 def vecinos(estado):
 
     lista = []
 
     i = estado.index(0)
+
     fila, col = i // 3, i % 3
 
-    direcciones = [(-1,0),(1,0),(0,-1),(0,1)]
+    dirs = [(-1,0),(1,0),(0,-1),(0,1)]
 
-    for dx, dy in direcciones:
+    for dx, dy in dirs:
 
         nf, nc = fila + dx, col + dy
 
         if 0 <= nf < 3 and 0 <= nc < 3:
 
-            j = nf * 3 + nc
+            j = nf*3 + nc
 
             nuevo = list(estado)
 
@@ -84,17 +86,17 @@ def bfs_puzzle(inicio):
 
 
 # -----------------------------
-# Resolver puzzle con métricas
+# Resolver con medición
 # -----------------------------
 def resolver_puzzle(inicio):
 
     tracemalloc.start()
 
-    inicio_tiempo = time.perf_counter()
+    t0 = time.perf_counter()
 
     camino = bfs_puzzle(inicio)
 
-    fin_tiempo = time.perf_counter()
+    t1 = time.perf_counter()
 
     memoria_actual, memoria_max = tracemalloc.get_traced_memory()
 
@@ -102,7 +104,7 @@ def resolver_puzzle(inicio):
 
     return {
         "camino": camino,
-        "tiempo": fin_tiempo - inicio_tiempo,
+        "tiempo": t1 - t0,
         "memoria": memoria_max / 1024,
         "pasos": len(camino)
     }
