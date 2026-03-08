@@ -1,7 +1,6 @@
 import time
 import tracemalloc
 
-
 def dfs(grafo, inicio, objetivo):
     pila = [inicio]
     visitados = set()
