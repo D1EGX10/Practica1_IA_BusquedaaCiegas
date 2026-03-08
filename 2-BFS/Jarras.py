@@ -1,107 +1,84 @@
 import time
 import tracemalloc
-#Jarras-Capacidad
+from collections import deque
+
 CAP1 = 4
 CAP2 = 3
 estado_inicial = (0, 0)
 OBJETIVO = 2
+
 def obtener_vecinos(estado):
     x, y = estado
     vecinos = []
 
-    # llenar1
+    # Llenar jarras
     vecinos.append((CAP1, y))
-
-    # llenar2
     vecinos.append((x, CAP2))
-
-    # vaciar1
+    
+    # Vaciar jarras
     vecinos.append((0, y))
-
-    # vaciar2
     vecinos.append((x, 0))
 
-    # verter1 en j2
+    # Transferir de jarra 1 a jarra 2
     transferencia = min(x, CAP2 - y)
     vecinos.append((x - transferencia, y + transferencia))
 
-    # verter2 en j1
+    # Transferir de jarra 2 a jarra 1
     transferencia = min(y, CAP1 - x)
     vecinos.append((x + transferencia, y - transferencia))
 
-    return vecinos
-
-from collections import deque
-
+    return list(set(vecinos)) # Evitar duplicados inmediatos
 
 def bfs_jarras():
-
     cola = deque([estado_inicial])
     visitados = set()
     camino = {estado_inicial: None}
+    nodos_explorados = 0
 
     while cola:
-
         estado = cola.popleft()
+        if estado in visitados:
+            continue
+            
+        visitados.add(estado)
+        nodos_explorados += 1
+        x, y = estado
 
-        if estado not in visitados:
-            visitados.add(estado)
+        if x == OBJETIVO or y == OBJETIVO:
+            return camino, estado, nodos_explorados, len(cola)
 
-            x, y = estado
+        for vecino in obtener_vecinos(estado):
+            if vecino not in visitados and vecino not in camino:
+                cola.append(vecino)
+                camino[vecino] = estado
 
-            if x == OBJETIVO or y == OBJETIVO:
-                return camino, estado, len(visitados), len(cola)
+    return None, None, nodos_explorados, len(cola)
 
-            for vecino in obtener_vecinos(estado):
-
-                if vecino not in visitados:
-
-                    cola.append(vecino)
-
-                    if vecino not in camino:
-                        camino[vecino] = estado
-
-    return None, None, len(visitados), len(cola)
-
-def reconstruir_camino(camino, estado_final):
-
+def reconstruir_camino_jarras(camino, estado_final):
     ruta = []
     estado = estado_final
-
     while estado is not None:
         ruta.append(estado)
         estado = camino[estado]
-
     ruta.reverse()
     return ruta
 
-if __name__ == "__main__":
-
+def resolver_jarras_completo():
     tracemalloc.start()
-
-    inicio = time.perf_counter()
-
-    camino, estado_final, estados_visitados, tamaño_cola = bfs_jarras()
-
-    fin = time.perf_counter()
-
-    memoria_actual, memoria_max = tracemalloc.get_traced_memory()
+    t0 = time.perf_counter()
+    
+    camino_dict, estado_final, explorados, en_cola = bfs_jarras()
+    
+    t1 = time.perf_counter()
+    _, mem_max = tracemalloc.get_traced_memory()
     tracemalloc.stop()
-
-    if estado_final:
-
-        ruta = reconstruir_camino(camino, estado_final)
-
-        print("Solución encontrada:\n")
-
-        for paso in ruta:
-            print(paso)
-
-    else:
-        print("No se encontró solución")
-
-    print("\n--- Métricas de rendimiento ---")
-    print("Tiempo de ejecución:", fin - inicio, "segundos")
-    print("Estados explorados:", estados_visitados)
-    print("Tamaño final de la cola:", tamaño_cola)
-    print("Memoria máxima usada:", memoria_max / 1024, "KB")
+    
+    ruta = reconstruir_camino_jarras(camino_dict, estado_final) if estado_final else []
+    
+    return {
+        "camino": ruta,
+        "tiempo": t1 - t0,
+        "memoria": mem_max / 1024,
+        "pasos": len(ruta),
+        "explorados": explorados
+    }
