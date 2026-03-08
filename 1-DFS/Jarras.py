@@ -1,103 +1,103 @@
+from collections import deque
 import time
 import tracemalloc
-#Jarras-Capacidad
-CAP1 = 4
-CAP2 = 3
-estado_inicial = (0, 0)
-OBJETIVO = 2
-def obtener_vecinos(estado):
-    x, y = estado
-    vecinos = []
-
-    # llenar1
-    vecinos.append((CAP1, y))
-
-    # llenar2
-    vecinos.append((x, CAP2))
-
-    # vaciar1
-    vecinos.append((0, y))
-
-    # vaciar2
-    vecinos.append((x, 0))
-
-    # verter1 en j2
-    transferencia = min(x, CAP2 - y)
-    vecinos.append((x - transferencia, y + transferencia))
-
-    # verter2 en j1
-    transferencia = min(y, CAP1 - x)
-    vecinos.append((x + transferencia, y - transferencia))
-
-    return vecinos
 
 
-def dfs_jarras():
-    pila = [estado_inicial]
-    visitados = set()
-    camino = {estado_inicial: None}
+class ProblemaJarras:
 
-    while pila:
-        estado = pila.pop()
+    def __init__(self, capacidad1, capacidad2, objetivo):
+        self.cap1 = capacidad1
+        self.cap2 = capacidad2
+        self.objetivo = objetivo
 
-        if estado not in visitados:
+    def es_objetivo(self, estado):
+        return estado[0] == self.objetivo or estado[1] == self.objetivo
+
+    def sucesores(self, estado):
+
+        x, y = estado
+        sucesores = []
+
+        # llenar jarra 1
+        sucesores.append((self.cap1, y))
+
+        # llenar jarra 2
+        sucesores.append((x, self.cap2))
+
+        # vaciar jarra 1
+        sucesores.append((0, y))
+
+        # vaciar jarra 2
+        sucesores.append((x, 0))
+
+        # verter jarra1 -> jarra2
+        transfer = min(x, self.cap2 - y)
+        sucesores.append((x - transfer, y + transfer))
+
+        # verter jarra2 -> jarra1
+        transfer = min(y, self.cap1 - x)
+        sucesores.append((x + transfer, y - transfer))
+
+        return sucesores
+
+    def resolver(self):
+
+        tracemalloc.start()
+        inicio = time.perf_counter()
+
+        inicial = (0, 0)
+
+        cola = deque()
+        cola.append((inicial, [inicial]))
+
+        visitados = set()
+
+        while cola:
+
+            estado, camino = cola.popleft()
+
+            if estado in visitados:
+                continue
+
             visitados.add(estado)
 
-            x, y = estado
+            if self.es_objetivo(estado):
 
-            if x == OBJETIVO or y == OBJETIVO:
-                return camino, estado, len(visitados), len(pila)
+                tiempo = time.perf_counter() - inicio
+                memoria = tracemalloc.get_traced_memory()[1] / 1024
+                tracemalloc.stop()
 
-            for vecino in obtener_vecinos(estado):
-                if vecino not in visitados:
-                    pila.append(vecino)
+                return camino, tiempo, memoria, len(visitados)
 
-                    if vecino not in camino:
-                        camino[vecino] = estado
+            for suc in self.sucesores(estado):
 
-    return None, None, len(visitados), len(pila)
+                if suc not in visitados:
+                    cola.append((suc, camino + [suc]))
 
+        tiempo = time.perf_counter() - inicio
+        memoria = tracemalloc.get_traced_memory()[1] / 1024
+        tracemalloc.stop()
 
-def reconstruir_camino(camino, estado_final):
-    ruta = []
-    estado = estado_final
-
-    while estado is not None:
-        ruta.append(estado)
-        estado = camino[estado]
-
-    ruta.reverse()
-    return ruta
+        return None, tiempo, memoria, len(visitados)
 
 
-if __name__ == "__main__":
+# ------------------------------------------------
+# FUNCIÓN QUE USA LA INTERFAZ
+# ------------------------------------------------
 
-    #memoria
-    tracemalloc.start()
+def resolver_jarras_dfs():
 
-    #tiempo
-    inicio = time.perf_counter()
+    capacidad1 = 4
+    capacidad2 = 3
+    objetivo = 2
 
-    camino, estado_final, estados_visitados, tamaño_pila = dfs_jarras()
-    fin = time.perf_counter()
+    problema = ProblemaJarras(capacidad1, capacidad2, objetivo)
 
-    # medir memoria
-    memoria_actual, memoria_max = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
+    camino, tiempo, memoria, visitados = problema.resolver()
 
-    if estado_final:
-        ruta = reconstruir_camino(camino, estado_final)
-
-        print("Solución encontrada:\n")
-
-        for paso in ruta:
-            print(paso)
-
-    else:
-        print("No se encontró solución")
-
-    print("\n--- Métricas de rendimiento ---")
-    print("Tiempo de ejecución:", fin - inicio, "segundos")
-    print("Estados explorados:", estados_visitados)
-    print("Tamaño final de la pila:", tamaño_pila)
-    print("Memoria máxima usada:", memoria_max / 1024, "KB")
+    return {
+        "camino": camino,
+        "visitados": visitados,
+        "tiempo": tiempo,
+        "memoria": memoria
+    }

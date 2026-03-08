@@ -1,5 +1,6 @@
 import time
 import tracemalloc
+import random
 
 OBJETIVO = (1,2,3,4,5,6,7,8,0)
 
@@ -8,10 +9,10 @@ def vecinos(estado):
 
     i = estado.index(0)
 
-    movimientos = []
-
     fila = i // 3
     col = i % 3
+
+    movimientos = []
 
     if fila > 0:
         movimientos.append(i-3)
@@ -30,7 +31,6 @@ def vecinos(estado):
     for j in movimientos:
 
         nuevo = list(estado)
-
         nuevo[i], nuevo[j] = nuevo[j], nuevo[i]
 
         estados.append(tuple(nuevo))
@@ -43,8 +43,7 @@ def dfs(inicial):
     pila = [inicial]
 
     visitados = set()
-
-    padre = {inicial:None}
+    padre = {inicial: None}
 
     while pila:
 
@@ -66,7 +65,7 @@ def dfs(inicial):
 
     nodo = OBJETIVO
 
-    while nodo:
+    while nodo is not None:
 
         camino.append(nodo)
         nodo = padre.get(nodo)
@@ -76,21 +75,41 @@ def dfs(inicial):
     return camino, len(visitados)
 
 
-def resolver_puzzle_dfs(estado_inicial):
+def generar_puzzle():
+
+    estado = list(OBJETIVO)
+
+    for _ in range(40):
+
+        i = estado.index(0)
+
+        movimientos = [-3,3,-1,1]
+
+        j = i + random.choice(movimientos)
+
+        if 0 <= j < 9:
+            estado[i],estado[j] = estado[j],estado[i]
+
+    return tuple(estado)
+
+
+def resolver_puzzle_dfs():
+
+    estado_inicial = generar_puzzle()
 
     tracemalloc.start()
-    t0 = time.perf_counter()
+    inicio_t = time.perf_counter()
 
     camino, visitados = dfs(estado_inicial)
 
-    t1 = time.perf_counter()
+    fin_t = time.perf_counter()
 
-    mem_actual, mem_max = tracemalloc.get_traced_memory()
+    memoria_actual, memoria_max = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 
     return {
         "camino": camino,
         "visitados": visitados,
-        "tiempo": t1-t0,
-        "memoria": mem_max/1024
+        "tiempo": fin_t - inicio_t,
+        "memoria": memoria_max / 1024
     }
