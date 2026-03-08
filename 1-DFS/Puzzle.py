@@ -1,59 +1,23 @@
-# -----------------------------
-# DFS
-# -----------------------------
+import time
+import tracemalloc
 
-def dfs(inicio):
+OBJETIVO = (1,2,3,4,5,6,7,8,0)
 
-    # Se inicializa con el estado inicial del puzzle
-    pila = [inicio]
 
-    # Conjunto que guarda los estados visitados
-    visitados = set([inicio])
+def resolver_puzzle_dfs(estado_inicial):
 
-    # Diccionario que guarda el padre de cada estado
-    padre = {}
+    tracemalloc.start()
+    t0 = time.perf_counter()
 
-    # Mientras la pila tenga estados por explorar
-    while pila:
+    camino, visitados = dfs(estado_inicial)
 
-        # Extrae el último estado de la pila (LIFO)
-        estado = pila.pop()
+    t1 = time.perf_counter()
+    mem_actual, mem_max = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
 
-        # Si el estado actual es el objetivo se detiene la búsqueda
-        if estado == objetivo:
-            break
-
-        # Genera todos los estados vecinos posibles
-        for v in vecinos(estado):
-
-            # Verifica que no haya sido visitado
-            if v not in visitados:
-
-                # Se agrega el estado a la pila
-                pila.append(v)
-
-                # Se marca como visitado
-                visitados.add(v)
-
-                # Guarda el padre para reconstruir el camino
-                padre[v] = estado
-
-    # Lista donde se guardará el camino solución
-    camino = []
-
-    # Se empieza desde el estado objetivo
-    nodo = objetivo
-
-    # Reconstrucción del camino
-    while nodo != inicio:
-
-        camino.append(nodo)
-        nodo = padre[nodo]
-
-    # Se agrega el inicio
-    camino.append(inicio)
-
-    # Se invierte para que vaya de inicio a objetivo
-    camino.reverse()
-
-    return camino, visitados
+    return {
+        "camino": camino,
+        "visitados": visitados,
+        "tiempo": t1 - t0,
+        "memoria": mem_max / 1024
+    }
