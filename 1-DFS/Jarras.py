@@ -1,76 +1,103 @@
 import time
 import tracemalloc
+#Jarras-Capacidad
+CAP1 = 4
+CAP2 = 3
+estado_inicial = (0, 0)
+OBJETIVO = 2
+def obtener_vecinos(estado):
+    x, y = estado
+    vecinos = []
+
+    # llenar1
+    vecinos.append((CAP1, y))
+
+    # llenar2
+    vecinos.append((x, CAP2))
+
+    # vaciar1
+    vecinos.append((0, y))
+
+    # vaciar2
+    vecinos.append((x, 0))
+
+    # verter1 en j2
+    transferencia = min(x, CAP2 - y)
+    vecinos.append((x - transferencia, y + transferencia))
+
+    # verter2 en j1
+    transferencia = min(y, CAP1 - x)
+    vecinos.append((x + transferencia, y - transferencia))
+
+    return vecinos
 
 
-def dfs(grafo, inicio, objetivo):
-    pila = [inicio]
+def dfs_jarras():
+    pila = [estado_inicial]
     visitados = set()
-    camino = {inicio: None}
+    camino = {estado_inicial: None}
 
     while pila:
-        nodo = pila.pop()
+        estado = pila.pop()
 
-        if nodo not in visitados:
-            visitados.add(nodo)
+        if estado not in visitados:
+            visitados.add(estado)
 
-            if nodo == objetivo:
-                return camino
+            x, y = estado
 
-            for vecino in grafo[nodo]:
+            if x == OBJETIVO or y == OBJETIVO:
+                return camino, estado, len(visitados), len(pila)
+
+            for vecino in obtener_vecinos(estado):
                 if vecino not in visitados:
                     pila.append(vecino)
 
                     if vecino not in camino:
-                        camino[vecino] = nodo
+                        camino[vecino] = estado
 
-    return None
+    return None, None, len(visitados), len(pila)
 
 
-def reconstruir_camino(camino, inicio, objetivo):
+def reconstruir_camino(camino, estado_final):
     ruta = []
-    nodo = objetivo
+    estado = estado_final
 
-    while nodo is not None:
-        ruta.append(nodo)
-        nodo = camino[nodo]
+    while estado is not None:
+        ruta.append(estado)
+        estado = camino[estado]
 
     ruta.reverse()
     return ruta
 
 
-# Prueba
-grafo = {
-    "A": ["B", "C"],
-    "B": ["D", "E"],
-    "C": ["F"],
-    "D": [],
-    "E": ["F"],
-    "F": []
-}
+if __name__ == "__main__":
 
-inicio = "A"
-objetivo = "F"
+    #memoria
+    tracemalloc.start()
 
-# Medición de memoria
-tracemalloc.start()
+    #tiempo
+    inicio = time.perf_counter()
 
-# Medición de tiempo
-inicio_tiempo = time.perf_counter()
+    camino, estado_final, estados_visitados, tamaño_pila = dfs_jarras()
+    fin = time.perf_counter()
 
-resultado = dfs(grafo, inicio, objetivo)
+    # medir memoria
+    memoria_actual, memoria_max = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
 
-fin_tiempo = time.perf_counter()
+    if estado_final:
+        ruta = reconstruir_camino(camino, estado_final)
 
-memoria_actual, memoria_maxima = tracemalloc.get_traced_memory()
-tracemalloc.stop()
+        print("Solución encontrada:\n")
 
-# Resultado
-if resultado:
-    ruta = reconstruir_camino(resultado, inicio, objetivo)
-    print("Camino encontrado:", ruta)
-else:
-    print("No se encontró camino")
+        for paso in ruta:
+            print(paso)
 
-print("\n--- Métricas de ejecución ---")
-print("Tiempo de ejecución:", fin_tiempo - inicio_tiempo, "segundos")
-print("Memoria máxima usada:", memoria_maxima / 1024, "KB")
+    else:
+        print("No se encontró solución")
+
+    print("\n--- Métricas de rendimiento ---")
+    print("Tiempo de ejecución:", fin - inicio, "segundos")
+    print("Estados explorados:", estados_visitados)
+    print("Tamaño final de la pila:", tamaño_pila)
+    print("Memoria máxima usada:", memoria_max / 1024, "KB")
