@@ -3,10 +3,6 @@ import time
 import tracemalloc
 
 
-# -----------------------------
-# DFS
-# -----------------------------
-
 def dfs(lab):
 
     n = len(lab)
@@ -17,7 +13,7 @@ def dfs(lab):
     pila = [inicio]
 
     visitados = []
-    visitados_set = set([inicio])
+    visitados_set = {inicio}
 
     padre = {}
 
@@ -46,15 +42,11 @@ def dfs(lab):
                     padre[(nx,ny)] = (x,y)
 
     camino = []
+
     nodo = meta
 
-    while nodo != inicio:
-
+    while nodo in padre:
         camino.append(nodo)
-
-        if nodo not in padre:
-            break
-
         nodo = padre[nodo]
 
     camino.append(inicio)
@@ -63,10 +55,6 @@ def dfs(lab):
     return visitados, camino
 
 
-# -----------------------------
-# Generar laberinto
-# -----------------------------
-
 def generar_laberinto(n):
 
     lab = [[0 for _ in range(n)] for _ in range(n)]
@@ -74,17 +62,13 @@ def generar_laberinto(n):
     for i in range(n):
         for j in range(n):
 
-            if (i,j) != (0,0) and (i,j) != (n-1,n-1):
+            if (i,j) not in [(0,0),(n-1,n-1)]:
 
-                if random.random() < 0.3:
+                if random.random() < 0.30:
                     lab[i][j] = 1
 
     return lab
 
-
-# -----------------------------
-# Resolver Laberinto DFS
-# -----------------------------
 
 def resolver_laberinto_dfs(size):
 
