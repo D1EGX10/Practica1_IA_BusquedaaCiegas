@@ -2,58 +2,48 @@
 # DFS
 # -----------------------------
 
-def dfs(inicio):
+def dfs(lab):  # Definición por medio de DFS
 
-    # Se inicializa con el estado inicial del puzzle
-    pila = [inicio]
+    n = len(lab)  # Obtiene el tamaño del laberinto
 
-    # Conjunto que guarda los estados visitados
-    visitados = set([inicio])
+    inicio = (0,0)   # Inicio
+    meta = (n-1,n-1) # Meta
 
-    # Diccionario que guarda el padre de cada estado
-    padre = {}
+    pila = [inicio]  
+    visitados = set([inicio])  # Conjunto de nodos visitados
+    padre = {}  # Diccionario para reconstruir el camino
 
-    # Mientras la pila tenga estados por explorar
+    movimientos = [(0,1),(1,0),(0,-1),(-1,0)]  # Posibles movimientos
+
     while pila:
 
-        # Extrae el último estado de la pila (LIFO)
-        estado = pila.pop()
+        x,y = pila.pop()  # Toma el último nodo agregado (LIFO)
 
-        # Si el estado actual es el objetivo se detiene la búsqueda
-        if estado == objetivo:
+        if (x,y) == meta:  # Verifica si llegó a la meta
             break
 
-        # Genera todos los estados vecinos posibles
-        for v in vecinos(estado):
+        for dx,dy in movimientos:  # Calcula nuevas posiciones
 
-            # Verifica que no haya sido visitado
-            if v not in visitados:
+            nx = x + dx
+            ny = y + dy
 
-                # Se agrega el estado a la pila
-                pila.append(v)
+            if 0 <= nx < n and 0 <= ny < n:  # Verifica límites
 
-                # Se marca como visitado
-                visitados.add(v)
+                if lab[nx][ny] == 0 and (nx,ny) not in visitados:  # Verifica si es camino válido
 
-                # Guarda el padre para reconstruir el camino
-                padre[v] = estado
+                    pila.append((nx,ny))  # Agrega a la pila
+                    visitados.add((nx,ny))  # Marca como visitado
+                    padre[(nx,ny)] = (x,y)  # Guarda el padre
 
-    # Lista donde se guardará el camino solución
     camino = []
+    nodo = meta
 
-    # Se empieza desde el estado objetivo
-    nodo = objetivo
-
-    # Reconstrucción del camino
     while nodo != inicio:
 
-        camino.append(nodo)
-        nodo = padre[nodo]
+        camino.append(nodo)  # Agrega nodo al camino
+        nodo = padre[nodo]   # Retrocede al nodo padre
 
-    # Se agrega el inicio
     camino.append(inicio)
+    camino.reverse()  # Invierte el camino
 
-    # Se invierte para que vaya de inicio a objetivo
-    camino.reverse()
-
-    return camino, visitados
+    return visitados, camino
