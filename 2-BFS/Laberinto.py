@@ -4,7 +4,7 @@ import random #Genera numeros aleatorios
 import time #Mide el tiempo
 from collections import deque #Cola
 
-MAX_SIZE = 700
+MAX_SIZE = 700 #Tamaño maximo del laberinto, cada celda mide 70px
 
 
 # -----------------------------
@@ -13,34 +13,35 @@ MAX_SIZE = 700
 
 def generar_laberinto(n):
 
-    lab = [[1 for _ in range(n)] for _ in range(n)]
 
-    x,y = 0,0
-    camino = [(0,0)]
+    lab = [[1 for _ in range(n)] for _ in range(n)] #Estamos ingresando el tamaño que queeremos en nuestro caso, 10*10,20*10 y 50*50
 
-    while (x,y) != (n-1,n-1):
+    x,y = 0,0  #Posición inicial, en este caso "x" son las filas y "y" son las columnas 
+    camino = [(0,0)] #Guardamos el camino hacia la meta
 
-        if random.random() < 0.5 and x < n-1:
+    while (x,y) != (n-1,n-1):  #Recorremmos todo hasta llegar a la meta
+
+        if random.random() < 0.5 and x < n-1:  
             x += 1
-        elif y < n-1:
+        elif y < n-1: #Avanza a la derecha y se detiene hasta que llega a la meta.
             y += 1
-        elif x < n-1:
+        elif x < n-1: #Avanza de manera izquierda y sse detiene hasta que llega a la meta
             x += 1
 
-        camino.append((x,y))
+        camino.append((x,y))  #Se guarda la solución
 
-    for i,j in camino:
+    for i,j in camino: # Se recorre el laberinto y se marca con un 0, para encontrar la solución
         lab[i][j] = 0
 
-    for i in range(n):
+    for i in range(n):  #Recorre todo el laberinto
         for j in range(n):
 
-            if (i,j) not in camino and random.random() < 0.3:
+            if (i,j) not in camino and random.random() < 0.3: #Si no hay camino se marca con un 1 , que significa que es una pared
                 lab[i][j] = 1
             else:
-                lab[i][j] = 0
+                lab[i][j] = 0 #Si se marca como un 0, es porque hay un camino para la meta
 
-    lab[0][0] = 0
+    lab[0][0] = 0  #Asegura que siempre haya unna solución para el laberinto
     lab[n-1][n-1] = 0
 
     return lab
@@ -50,51 +51,51 @@ def generar_laberinto(n):
 # BFS
 # -----------------------------
 
-def bfs(lab):
+def bfs(lab): #Definición por medio de BFS
 
-    n = len(lab)
+    n = len(lab) #Obtiene el tamaño del laberinto
 
-    inicio = (0,0)
-    meta = (n-1,n-1)
+    inicio = (0,0)  #Inicio
+    meta = (n-1,n-1) #Meta, n-1 ees porque el array se inicializa en 0,0
 
-    cola = deque([inicio])
-    visitados = set([inicio])
-    padre = {}
+    cola = deque([inicio]) 
+    visitados = set([inicio]) #Conjunto de nodos ya visitados
+    padre = {} #Diccionario que guarda de qué nodo venimos para reconstruir el camino
 
-    movimientos = [(0,1),(1,0),(0,-1),(-1,0)]
+    movimientos = [(0,1),(1,0),(0,-1),(-1,0)] #Posibles movimientos, izquierda, derecha, arriba y abajo
 
-    while cola:
+    while cola: 
 
-        x,y = cola.popleft()
+        x,y = cola.popleft() #Toma el primer nodo de la cola
 
-        if (x,y) == meta:
+        if (x,y) == meta: #Verifica si la posición actual es la meta
             break
 
-        for dx,dy in movimientos:
+        for dx,dy in movimientos: #Calculo de la nueva posción, derecha , izquierda , arriba o abajo
 
             nx = x + dx
             ny = y + dy
 
-            if 0 <= nx < n and 0 <= ny < n:
+            if 0 <= nx < n and 0 <= ny < n:  #Evita que se salga de las dimensiones del laberinto
 
-                if lab[nx][ny] == 0 and (nx,ny) not in visitados:
+                if lab[nx][ny] == 0 and (nx,ny) not in visitados: #Verifica que sea un camino al cual pueda llegar a la meta
 
-                    cola.append((nx,ny))
-                    visitados.add((nx,ny))
-                    padre[(nx,ny)] = (x,y)
+                    cola.append((nx,ny)) #Agrega los nodos vecionos a la cola
+                    visitados.add((nx,ny)) #Guarda los vecinos visitados, para ya no visitarlos nuevamente
+                    padre[(nx,ny)] = (x,y) #Guarda el padre y la posiciones
 
     camino = []
     nodo = meta
 
     while nodo != inicio:
 
-        camino.append(nodo)
-        nodo = padre[nodo]
+        camino.append(nodo) #Se agrega el camino
+        nodo = padre[nodo] #Vamos retrocediendo hasta llegar a la meta
 
-    camino.append(inicio)
-    camino.reverse()
+    camino.append(inicio) #Agregamos el inicio
+    camino.reverse() #Invierte el camino para que vaya desde el inicio hasta la meta
 
-    return visitados,camino
+    return visitados,camino 
 
 
 # -----------------------------

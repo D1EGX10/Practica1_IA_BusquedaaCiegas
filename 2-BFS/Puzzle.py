@@ -1,43 +1,43 @@
-import tkinter as tk
-import random
-import time
-import tracemalloc
-from collections import deque
-
+import tkinter as tk #Sirve para la interfaz grafica 
+import random #Genera numeros aleatorios
+import time  #Mide el tiempo
+import tracemalloc #Mide la memoria utilizada
+from collections import deque  #Cola
+ 
 # estado objetivo
 objetivo = (1,2,3,
             4,5,6,
             7,8,0)
 
-# -----------------------------
+
 # movimientos posibles
-# -----------------------------
 
-def vecinos(estado):
 
-    lista = []
+def vecinos(estado): 
 
-    i = estado.index(0)
+    lista = [] #Guarda los nuevos estados posibles.
 
-    fila = i // 3
+    i = estado.index(0) #Busca dónde está el 0, posición dentro del puzzle.
+
+    fila = i // 3 #Estas dos lineas de codigo indican las coordenas del tablero, para ubicar el 0
     col = i % 3
 
-    dirs = [(-1,0),(1,0),(0,-1),(0,1)]
+    dirs = [(-1,0),(1,0),(0,-1),(0,1)]  #Representa los posibles movimientos arriba,izquierda ,abajo y derecha    
 
-    for dx,dy in dirs:
+    for dx,dy in dirs:  #intenta mover el espacio vacío en cada dirección.
 
-        nf = fila + dx
-        nc = col + dy
+        nf = fila + dx #Calcula la nueva posición del espacio vacío.
+        nc = col + dy  #Calcula la nueva posición del espacio vacío.
 
-        if 0 <= nf < 3 and 0 <= nc < 3:
+        if 0 <= nf < 3 and 0 <= nc < 3:  #Evita que se salga del tablero
 
-            j = nf*3 + nc
+            j = nf*3 + nc #Convierte fila y columna nuevamente a posición del arreglo.
 
-            nuevo = list(estado)
+            nuevo = list(estado)   #Convierte la tupla en lista porque las tuplas no se pueden modificar.
 
-            nuevo[i],nuevo[j] = nuevo[j],nuevo[i]
+            nuevo[i],nuevo[j] = nuevo[j],nuevo[i]  #mueve el espacio vacío.
 
-            lista.append(tuple(nuevo))
+            lista.append(tuple(nuevo)) #Convierte nuevamente a tupla y lo guarda.
 
     return lista
 
@@ -47,41 +47,67 @@ def vecinos(estado):
 # -----------------------------
 
 def bfs(inicio):
-
+   
+    # Se inicializa con el estado inicial del puzzle
     cola = deque([inicio])
+
+    # Conjunto que guarda los estados que ya fueron visitados, evita explorar el mismo estado más de una vez
     visitados = set([inicio])
+
+    # Diccionario que guarda el "padre" de cada estado, sirve para reconstruir el camino desde el inicio hasta el objetivo
     padre = {}
 
+    # Mientras la cola tenga estados por explorar
     while cola:
 
+        # Extrae el primer estado de la cola (FIFO)
         estado = cola.popleft()
 
+        # Si el estado actual es el estado objetivo, se detiene la búsqueda
         if estado == objetivo:
             break
 
+        # Genera todos los estados vecinos posibles
         for v in vecinos(estado):
 
+            # Verifica que el estado vecino no haya sido visitado
             if v not in visitados:
 
+                # Se agrega el nuevo estado a la cola para explorarlo después
                 cola.append(v)
+
+                # Se marca el estado como visitado
                 visitados.add(v)
+
+                # Se guarda el estado actual como "padre" del nuevo estado, permite reconstruir el camino solución
                 padre[v] = estado
 
+    # Lista donde se guardará el camino solución
     camino = []
 
+    # Se empieza desde el estado objetivo
     nodo = objetivo
 
+    # Se reconstruye el camino retrocediendo usando el diccionario padre
     while nodo != inicio:
 
+        # Se agrega el nodo actual al camino
         camino.append(nodo)
+
+        # Se retrocede al estado padre
         nodo = padre[nodo]
 
+    # Finalmente se agrega el estado inicial
     camino.append(inicio)
 
+    # El camino se construyó desde objetivo -> inicio
+    # Por eso se invierte para obtener inicio -> objetivo
     camino.reverse()
 
+    # Retorna:
+    # 1. El camino solución
+    # 2. El conjunto de estados visitados durante la búsqueda
     return camino, visitados
-
 
 # -----------------------------
 # interfaz gráfica
