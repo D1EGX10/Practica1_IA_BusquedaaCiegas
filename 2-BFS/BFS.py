@@ -1,209 +1,65 @@
-import tkinter as tk
-from tkinter import ttk
 import time
+import tracemalloc
+from collections import deque
 
-from Jarras import bfs_jarras, reconstruir_camino
-from Laberinto import resolver_laberinto
-from Puzzle import resolver_puzzle
+def bfs(grafo, inicio, objetivo):
+    if inicio == objetivo:
+        return {inicio: None}
 
-PROBLEMAS = {
-    "Jarras":"jarras",
-    "Laberinto":"laberinto",
-    "8-Puzzle":"puzzle"
+    cola = deque([inicio])
+    # Marcamos como visitado al ENCOLAR
+    visitados = {inicio}
+    padre = {inicio: None}
+
+    while cola:
+        nodo = cola.popleft()
+
+        if nodo == objetivo:
+            return padre
+
+        for vecino in grafo.get(nodo, []):
+            if vecino not in visitados:
+                visitados.add(vecino) # Evita duplicados en la cola
+                padre[vecino] = nodo
+                cola.append(vecino)
+
+    return None
+
+def reconstruir_camino(padre_dict, objetivo):
+    ruta = []
+    nodo = objetivo
+    while nodo is not None:
+        ruta.append(nodo)
+        nodo = padre_dict[nodo]
+    return ruta[::-1] # Inversión más limpia
+
+# --- PRUEBA Y MÉTRICAS ---
+grafo = {
+    "A": ["B", "C"],
+    "B": ["D", "E"],
+    "C": ["F"],
+    "D": [],
+    "E": ["F"],
+    "F": []
 }
 
-class AppBFSSelector(tk.Tk):
+inicio, objetivo = "A", "F"
 
-    def __init__(self):
+tracemalloc.start()
+inicio_tiempo = time.perf_counter()
 
-        super().__init__()
+resultado_padres = bfs(grafo, inicio, objetivo)
 
-        self.title("BFS Problemas")
+fin_tiempo = time.perf_counter()
+_, memoria_maxima = tracemalloc.get_traced_memory()
+tracemalloc.stop()
 
-        self.geometry("700x700")
+if resultado_padres:
+    ruta = reconstruir_camino(resultado_padres, objetivo)
+    print(f"Camino encontrado: {ruta}")
+else:
+    print("No se encontró camino")
 
-        tk.Label(self,text="Selecciona problema").pack()
-
-        self.var=tk.StringVar(value="Jarras")
-
-        ttk.Combobox(self,textvariable=self.var,values=list(PROBLEMAS.keys())).pack()
-
-        tk.Button(self,text="Iniciar",command=self.iniciar).pack()
-
-        nav=tk.Frame(self)
-
-        nav.pack()
-
-        self.btn_ant=tk.Button(nav,text="Anterior",command=self.anterior)
-
-        self.btn_ant.pack(side="left")
-
-        self.btn_sig=tk.Button(nav,text="Siguiente",command=self.siguiente)
-
-        self.btn_sig.pack(side="left")
-
-        self.canvas=tk.Canvas(self,width=600,height=600)
-
-        self.canvas.pack()
-
-        self.pasos=[]
-        self.index=0
-
-    def iniciar(self):
-
-        p=PROBLEMAS[self.var.get()]
-
-        if p=="jarras":
-            self.jarras()
-
-        if p=="laberinto":
-            self.laberinto()
-
-        if p=="puzzle":
-            self.puzzle()
-
-    # -------------------
-    # JARRAS MANUAL
-    # -------------------
-
-    def jarras(self):
-
-        camino,estado,_,_=bfs_jarras()
-
-        self.pasos=reconstruir_camino(camino,estado)
-
-        self.index=0
-
-        self.mostrar_jarras()
-
-    def mostrar_jarras(self):
-
-        estado=self.pasos[self.index]
-
-        self.canvas.delete("all")
-
-        x,y=estado
-
-        h1=x*40
-        h2=y*60
-
-        self.canvas.create_rectangle(100,200,160,400)
-        self.canvas.create_rectangle(100,400-h1,160,400,fill="blue")
-
-        self.canvas.create_rectangle(300,200,360,400)
-        self.canvas.create_rectangle(300,400-h2,360,400,fill="blue")
-
-    def siguiente(self):
-
-        if self.index<len(self.pasos)-1:
-
-            self.index+=1
-
-            self.mostrar_jarras()
-
-    def anterior(self):
-
-        if self.index>0:
-
-            self.index-=1
-
-            self.mostrar_jarras()
-
-    # -------------------
-    # LABERINTO AUTOMATICO
-    # -------------------
-
-    def laberinto(self):
-
-        r=resolver_laberinto(15)
-
-        self.lab=r["laberinto"]
-        self.expl=r["exploracion"]
-        self.cam=r["camino"]
-
-        self.i=0
-
-        self.animar_laberinto()
-
-    def animar_laberinto(self):
-
-        if self.i<len(self.expl):
-
-            x,y=self.expl[self.i]
-
-            s=30
-
-            self.canvas.create_rectangle(
-                y*s,x*s,y*s+s,x*s+s,
-                fill="blue"
-            )
-
-            self.i+=1
-
-            self.after(50,self.animar_laberinto)
-
-        else:
-
-            self.animar_camino(0)
-
-    def animar_camino(self,i):
-
-        if i<len(self.cam):
-
-            x,y=self.cam[i]
-
-            s=30
-
-            self.canvas.create_rectangle(
-                y*s,x*s+s,y*s+s,x*s+s,
-                fill="yellow"
-            )
-
-            self.after(80,lambda:self.animar_camino(i+1))
-
-    # -------------------
-    # PUZZLE AUTOMATICO
-    # -------------------
-
-    def puzzle(self):
-
-        inicio=(1,2,3,4,5,6,0,7,8)
-
-        r=resolver_puzzle(inicio)
-
-        self.cam=r["camino"]
-
-        self.i=0
-
-        self.animar_puzzle()
-
-    def animar_puzzle(self):
-
-        if self.i<len(self.cam):
-
-            estado=self.cam[self.i]
-
-            self.canvas.delete("all")
-
-            for i in range(9):
-
-                x=(i%3)*100
-                y=(i//3)*100
-
-                v=estado[i]
-
-                self.canvas.create_rectangle(x,y,x+100,y+100)
-
-                if v!=0:
-                    self.canvas.create_text(x+50,y+50,text=str(v),font=("Arial",20))
-
-            self.i+=1
-
-            self.after(500,self.animar_puzzle)
-
-
-if __name__=="__main__":
-
-    app=AppBFSSelector()
-
-    app.mainloop()
+print("\n--- Métricas de ejecución ---")
+print(f"Tiempo: {fin_tiempo - inicio_tiempo:.8f} segundos")
+print(f"Memoria máxima: {memoria_maxima / 1024:.2f} KB")

@@ -2,116 +2,60 @@ import random
 import time
 import tracemalloc
 
-
-def generar_camino_seguro(n):
-
-    x, y = 0, 0
-    camino = [(x, y)]
-
-    while (x, y) != (n - 1, n - 1):
-
-        if x == n - 1:
-            y += 1
-        elif y == n - 1:
-            x += 1
-        else:
-            if random.random() < 0.5:
-                x += 1
-            else:
-                y += 1
-
-        camino.append((x, y))
-
-    return camino
-
-
 def generar_laberinto(n):
-
-    lab = [[0 for _ in range(n)] for _ in range(n)]
-
-    camino_seguro = generar_camino_seguro(n)
-
+    lab = [[1 for _ in range(n)] for _ in range(n)]
+    x, y = 0, 0
+    camino_seguro = [(0, 0)]
+    while (x, y) != (n - 1, n - 1):
+        if x < n - 1 and (y == n - 1 or random.random() < 0.5): x += 1
+        elif y < n - 1: y += 1
+        camino_seguro.append((x, y))
+    for i, j in camino_seguro: lab[i][j] = 0
     for i in range(n):
         for j in range(n):
-
-            if (i, j) not in camino_seguro and (i, j) not in [(0, 0), (n - 1, n - 1)]:
-
-                if random.random() < 0.30:
-                    lab[i][j] = 1
-
+            if (i, j) not in camino_seguro:
+                lab[i][j] = 1 if random.random() < 0.28 else 0
+    lab[0][0], lab[n-1][n-1] = 0, 0
     return lab
 
-
-def dfs(lab):
-
-    n = len(lab)
-
-    inicio = (0, 0)
-    meta = (n - 1, n - 1)
-
-    pila = [inicio]
-
-    visitados = []
-    visitados_set = {inicio}
-
-    padre = {}
-
-    movimientos = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-
-    while pila:
-
-        x, y = pila.pop()
-
-        visitados.append((x, y))
-
-        if (x, y) == meta:
-            break
-
-        for dx, dy in movimientos:
-
-            nx = x + dx
-            ny = y + dy
-
-            if 0 <= nx < n and 0 <= ny < n:
-
-                if lab[nx][ny] == 0 and (nx, ny) not in visitados_set:
-
-                    pila.append((nx, ny))
-                    visitados_set.add((nx, ny))
-                    padre[(nx, ny)] = (x, y)
-
-    camino = []
-    nodo = meta
-
-    while nodo in padre:
-        camino.append(nodo)
-        nodo = padre[nodo]
-
-    camino.append(inicio)
-    camino.reverse()
-
-    return visitados, camino
-
-
-def resolver_laberinto_dfs(size):
-
-    lab = generar_laberinto(size)
-
+def resolver_laberinto_dfs(n):
+    lab = generar_laberinto(n)
     tracemalloc.start()
-    inicio_t = time.perf_counter()
+    t0 = time.perf_counter()
 
-    visitados, camino = dfs(lab)
+    pila = [(0, 0)]
+    visitados_orden = []
+    visitados_set = {(0, 0)}
+    padre = {(0, 0): None}
+    
+    while pila:
+        curr = pila.pop()
+        visitados_orden.append(curr)
+        if curr == (n-1, n-1): break
 
-    fin_t = time.perf_counter()
-
-    memoria_actual, memoria_max = tracemalloc.get_traced_memory()
+        for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+            nx, ny = curr[0] + dx, curr[1] + dy
+            if 0 <= nx < n and 0 <= ny < n and lab[nx][ny] == 0 and (nx, ny) not in visitados_set:
+                visitados_set.add((nx, ny))
+                padre[(nx, ny)] = curr
+                pila.append((nx, ny))
+    
+    camino = []
+    curr = (n-1, n-1)
+    if curr in padre:
+        while curr is not None:
+            camino.append(curr)
+            curr = padre[curr]
+    
+    t1 = time.perf_counter()
+    _, m_max = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 
     return {
         "laberinto": lab,
-        "visitados": visitados,
-        "camino": camino,
-        "tiempo": fin_t - inicio_t,
-        "nodos_explorados": len(visitados),
-        "memoria": memoria_max / 1024
+        "visitados": visitados_orden,
+        "camino": camino[::-1],
+        "tiempo": t1 - t0,
+        "memoria": m_max / 1024,
+        "nodos_explorados": len(visitados_orden)
     }

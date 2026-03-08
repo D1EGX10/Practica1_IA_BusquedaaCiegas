@@ -1,299 +1,113 @@
 import tkinter as tk
 from tkinter import ttk
+import random
 
+# IMPORTACIÓN DE TUS MÓDULOS
 from Laberinto import resolver_laberinto_dfs
-from Puzzle import resolver_puzzle_dfs
+from Puzzle import resolver_puzzle_dfs, OBJETIVO
 from Jarras import resolver_jarras_dfs
 
+COLORS = {
+    'fondo': "#f0f2f5", 'pared': "#2c3e50", 'pasillo': "white",
+    'visitado': "#8ab4f8", 'camino': "#f1c40f", 'inicio': "#2ecc71",
+    'fin': "#e74c3c", 'agua': "#3498db"
+}
 
-MAX_SIZE = 520
-
-
-class AppDFS(tk.Tk):
-
+class AppDFSSolver(tk.Tk):
     def __init__(self):
-
         super().__init__()
+        self.title("AI Solver - DFS Edition")
+        self.geometry("800x820")
+        self.configure(bg=COLORS['fondo'])
+        self.pasos = []; self.index_paso = 0; self.reproduciendo = False
+        self.setup_ui()
 
-        self.title("DFS - Inteligencia Artificial")
-        self.geometry("750x820")
+    def setup_ui(self):
+        ctrl = tk.Frame(self, pady=10, bg=COLORS['fondo']); ctrl.pack()
+        tk.Label(ctrl, text="Problema:", bg=COLORS['fondo'], font=("Arial", 10, "bold")).grid(row=0, column=0)
+        self.prob_var = tk.StringVar(value="Laberinto")
+        ttk.Combobox(ctrl, textvariable=self.prob_var, values=["Laberinto", "8-Puzzle", "Jarras"], state="readonly").grid(row=0, column=1, padx=5)
+        
+        tk.Label(ctrl, text="Dimensión:", bg=COLORS['fondo'], font=("Arial", 10, "bold")).grid(row=0, column=2)
+        self.dim_var = tk.IntVar(value=10)
+        ttk.Combobox(ctrl, textvariable=self.dim_var, values=[10, 20, 50], width=5).grid(row=0, column=3, padx=5)
 
-        tk.Label(self,text="Selecciona Problema",font=("Arial",14)).pack()
+        btns = tk.Frame(self, bg=COLORS['fondo']); btns.pack(pady=5)
+        ttk.Button(btns, text="🚀 CALCULAR", command=self.resolver).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btns, text="⏯ PLAY", command=self.toggle).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btns, text="🔄 RESET", command=self.reset).pack(side=tk.LEFT, padx=5)
 
-        self.problema = tk.StringVar(value="Laberinto")
+        self.speed = ttk.Scale(self, from_=500, to_=5, orient=tk.HORIZONTAL, length=200)
+        self.speed.set(100); self.speed.pack()
 
-        ttk.Combobox(
-            self,
-            textvariable=self.problema,
-            values=["Jarras","Laberinto","8-Puzzle"]
-        ).pack(pady=5)
+        self.canvas = tk.Canvas(self, width=500, height=500, bg="white", bd=1, relief="solid")
+        self.canvas.pack(pady=10)
 
-        tk.Label(self,text="Tamaño Laberinto").pack()
+        self.lbl_status = tk.Label(self, text="Paso: 0/0", font=("Consolas", 11), bg=COLORS['fondo']); self.lbl_status.pack()
+        self.txt_metrics = tk.Text(self, height=5, width=70, state="disabled", font=("Consolas", 10)); self.txt_metrics.pack()
 
-        self.size = tk.StringVar(value="10")
+    def resolver(self):
+        self.reproduciendo = False; self.index_paso = 0
+        tipo = self.prob_var.get()
+        if tipo == "Laberinto":
+            res = resolver_laberinto_dfs(self.dim_var.get())
+            self.lab_data = res["laberinto"]
+            self.pasos = [('v', p) for p in res["visitados"]] + [('c', p) for p in res["camino"]]
+            self.cell_size = 496 // self.dim_var.get()
+        elif tipo == "8-Puzzle":
+            inicio = list(OBJETIVO); random.shuffle(inicio)
+            res = resolver_puzzle_dfs(tuple(inicio))
+            self.pasos = [('p', e) for e in res["camino"]]
+        else:
+            res = resolver_jarras_dfs()
+            self.pasos = [('j', e) for e in res["camino"]]
+        
+        self.escribir(f"--- MÉTRICAS DFS ---\nTiempo: {res['tiempo']:.6f} s\nMemoria: {res['memoria']:.2f} KB")
+        self.dibujar()
 
-        ttk.Combobox(
-            self,
-            textvariable=self.size,
-            values=["10","20","50"]
-        ).pack(pady=5)
+    def toggle(self):
+        self.reproduciendo = not self.reproduciendo
+        if self.reproduciendo: self.animar()
 
-        tk.Button(self,text="Iniciar",command=self.iniciar).pack(pady=10)
+    def animar(self):
+        if self.reproduciendo and self.index_paso < len(self.pasos)-1:
+            self.index_paso += 1; self.dibujar()
+            self.after(int(self.speed.get()), self.animar)
 
-        self.canvas = None
-        self.frame_puzzle = None
-        self.frame_jarras = None
-
-        self.botones = []
-
-        self.pasos = []
-        self.index = 0
-
-        self.metricas = None
-
-        self.label_metricas = tk.Label(self,text="",font=("Arial",10))
-        self.label_metricas.pack(pady=10)
-
-    def limpiar(self):
-
-        if self.canvas:
-            self.canvas.destroy()
-            self.canvas = None
-
-        if self.frame_puzzle:
-            self.frame_puzzle.destroy()
-            self.frame_puzzle = None
-
-        if self.frame_jarras:
-            self.frame_jarras.destroy()
-            self.frame_jarras = None
-
-
-    def iniciar(self):
-
-        self.label_metricas.config(text="")
-
-        problema = self.problema.get()
-
-        if problema == "Laberinto":
-            self.limpiar()
-            self.iniciar_laberinto()
-
-        if problema == "8-Puzzle":
-            self.limpiar()
-            self.iniciar_puzzle()
-
-        if problema == "Jarras":
-            self.limpiar()
-            self.iniciar_jarras()
-
-    # -------------------------------------------------
-    # LABERINTO
-    # -------------------------------------------------
-
-    def iniciar_laberinto(self):
-
-        size = int(self.size.get())
-
-        cell = MAX_SIZE // size
-
-        self.canvas = tk.Canvas(
-            self,
-            width=size*cell,
-            height=size*cell,
-            bg="white"
-        )
-
-        self.canvas.pack(pady=20)
-
-        resultado = resolver_laberinto_dfs(size)
-
-        self.lab = resultado["laberinto"]
-        self.visitados = resultado["visitados"]
-        self.camino = resultado["camino"]
-
-        self.metricas = resultado
-
-        self.cell = cell
-        self.size_lab = size
-
-        self.pasos = self.visitados + self.camino
-        self.index = 0
-
-        self.animar_laberinto()
-
-    def dibujar_laberinto(self):
-
+    def dibujar(self):
         self.canvas.delete("all")
+        tipo = self.prob_var.get(); off = 2
+        if tipo == "Laberinto":
+            cs = self.cell_size; n = self.dim_var.get()
+            for i in range(n):
+                for j in range(n):
+                    c = COLORS['pared'] if self.lab_data[i][j] == 1 else COLORS['pasillo']
+                    if (i,j) == (0,0): c = COLORS['inicio']
+                    if (i,j) == (n-1,n-1): c = COLORS['fin']
+                    self.canvas.create_rectangle(off+j*cs, off+i*cs, off+(j+1)*cs, off+(i+1)*cs, fill=c, outline="" if n>=50 else "#eee")
+            for k in range(self.index_paso + 1):
+                t, p = self.pasos[k]
+                col = COLORS['visitado'] if t == 'v' else COLORS['camino']
+                self.canvas.create_rectangle(off+p[1]*cs, off+p[0]*cs, off+(p[1]+1)*cs, off+(p[0]+1)*cs, fill=col, outline="")
+        elif tipo == "8-Puzzle":
+            estado = self.pasos[self.index_paso][1]; cs = 500 // 3
+            for i, v in enumerate(estado):
+                r, c = i//3, i%3
+                if v != 0:
+                    self.canvas.create_rectangle(c*cs+5, r*cs+5, (c+1)*cs-5, (r+1)*cs-5, fill=COLORS['agua'], outline="white")
+                    self.canvas.create_text(c*cs+cs/2, r*cs+cs/2, text=str(v), fill="white", font=("Arial", 40, "bold"))
+        elif tipo == "Jarras":
+            j1, j2 = self.pasos[self.index_paso][1]
+            self.canvas.create_rectangle(120, 150, 220, 400, outline=COLORS['pared'], width=3)
+            self.canvas.create_rectangle(123, 398-(j1/4)*250, 217, 398, fill=COLORS['agua'], outline="")
+            self.canvas.create_rectangle(300, 212, 380, 400, outline=COLORS['pared'], width=3)
+            self.canvas.create_rectangle(303, 398-(j2/3)*188, 377, 398, fill=COLORS['agua'], outline="")
+            self.canvas.create_text(250, 80, text=f"({j1}L, {j2}L)", font=("Consolas", 16, "bold"))
+        self.lbl_status.config(text=f"Paso: {self.index_paso}/{len(self.pasos)-1}")
 
-        for i in range(self.size_lab):
-            for j in range(self.size_lab):
+    def reset(self): self.reproduciendo = False; self.index_paso = 0; self.dibujar()
+    def escribir(self, t):
+        self.txt_metrics.config(state="normal"); self.txt_metrics.delete(1.0, tk.END)
+        self.txt_metrics.insert(tk.END, t); self.txt_metrics.config(state="disabled")
 
-                color = "white"
-
-                if self.lab[i][j] == 1:
-                    color = "black"
-
-                self.canvas.create_rectangle(
-                    j*self.cell,
-                    i*self.cell,
-                    (j+1)*self.cell,
-                    (i+1)*self.cell,
-                    fill=color,
-                    outline="gray"
-                )
-
-        self.canvas.create_rectangle(0,0,self.cell,self.cell,fill="green")
-
-        self.canvas.create_rectangle(
-            (self.size_lab-1)*self.cell,
-            (self.size_lab-1)*self.cell,
-            self.size_lab*self.cell,
-            self.size_lab*self.cell,
-            fill="red"
-        )
-
-    def animar_laberinto(self):
-
-        if self.index >= len(self.pasos):
-
-            self.label_metricas.config(
-                text=f"Tiempo algoritmo: {self.metricas['tiempo']:.6f}s | "
-                     f"Nodos explorados: {self.metricas['nodos_explorados']} | "
-                     f"Memoria: {self.metricas['memoria']:.2f} KB"
-            )
-
-            return
-
-        self.dibujar_laberinto()
-
-        for i in range(self.index):
-
-            x,y = self.pasos[i]
-
-            color = "#4FC3F7"
-
-            if (x,y) in self.camino:
-                color = "#FFD700"
-
-            self.canvas.create_rectangle(
-                y*self.cell,
-                x*self.cell,
-                (y+1)*self.cell,
-                (x+1)*self.cell,
-                fill=color
-            )
-
-        self.index += 1
-
-        self.after(40,self.animar_laberinto)
-
-    # -------------------------------------------------
-    # PUZZLE
-    # -------------------------------------------------
-
-    def iniciar_puzzle(self):
-
-        self.frame_puzzle = tk.Frame(self)
-        self.frame_puzzle.pack(pady=20)
-
-        self.botones = []
-
-        for i in range(9):
-
-            b = tk.Button(
-                self.frame_puzzle,
-                width=4,
-                height=2,
-                font=("Arial",26)
-            )
-
-            b.grid(row=i//3,column=i%3,padx=5,pady=5)
-
-            self.botones.append(b)
-
-        resultado = resolver_puzzle_dfs()
-
-        self.pasos = resultado["camino"]
-        self.index = 0
-
-        self.metricas = resultado
-
-        self.animar_puzzle()
-
-    def animar_puzzle(self):
-
-        if self.index >= len(self.pasos):
-
-            self.label_metricas.config(
-                text=f"Tiempo algoritmo: {self.metricas['tiempo']:.6f}s | "
-                     f"Estados explorados: {self.metricas['visitados']} | "
-                     f"Memoria: {self.metricas['memoria']:.2f} KB"
-            )
-
-            return
-
-        estado = self.pasos[self.index]
-
-        for i in range(9):
-
-            val = estado[i]
-
-            self.botones[i]["text"] = "" if val==0 else str(val)
-
-        self.index += 1
-
-        self.after(400,self.animar_puzzle)
-
-    # -------------------------------------------------
-    # JARRAS
-    # -------------------------------------------------
-
-    def iniciar_jarras(self):
-
-        self.frame_jarras = tk.Frame(self)
-        self.frame_jarras.pack(pady=30)
-
-        self.label_estado = tk.Label(
-            self.frame_jarras,
-            text="",
-            font=("Arial",20)
-        )
-        self.label_estado.pack()
-
-        resultado = resolver_jarras_dfs()
-
-        self.pasos = resultado["camino"]
-        self.index = 0
-
-        self.metricas = resultado
-
-        self.animar_jarras()
-
-    def animar_jarras(self):
-
-        if self.index >= len(self.pasos):
-
-            self.label_metricas.config(
-                text=f"Tiempo algoritmo: {self.metricas['tiempo']:.6f}s | "
-                     f"Estados explorados: {self.metricas['visitados']} | "
-                     f"Memoria: {self.metricas['memoria']:.2f} KB"
-            )
-
-            return
-
-        jarra1, jarra2 = self.pasos[self.index]
-
-        self.label_estado.config(
-            text=f"Jarra 1: {jarra1}   |   Jarra 2: {jarra2}"
-        )
-
-        self.index += 1
-
-        self.after(800,self.animar_jarras)
-
-
-if __name__ == "__main__":
-
-    app = AppDFS()
-    app.mainloop()
+if __name__ == "__main__": AppDFSSolver().mainloop()
